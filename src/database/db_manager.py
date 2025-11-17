@@ -3076,6 +3076,373 @@ class DBManager:
                 }
             }
 
+    # ==================== PROCESSES CRUD ====================
+
+    def add_process(self, name: str, description: str = None, icon: str = None,
+                    color: str = None, execution_mode: str = 'sequential',
+                    delay_between_steps: int = 500, tags: str = None,
+                    category: str = None) -> int:
+        """
+        Create a new process
+
+        Args:
+            name: Process name
+            description: Process description
+            icon: Process icon (emoji)
+            color: Process color (hex)
+            execution_mode: Execution mode (sequential, parallel, manual)
+            delay_between_steps: Delay in milliseconds between steps
+            tags: Comma-separated tags
+            category: Category name
+
+        Returns:
+            int: ID of created process
+        """
+        with self.transaction() as conn:
+            cursor = conn.execute("""
+                INSERT INTO processes (
+                    name, description, icon, color, execution_mode,
+                    delay_between_steps, tags, category
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (name, description, icon or '⚙️', color, execution_mode,
+                  delay_between_steps, tags, category))
+
+            process_id = cursor.lastrowid
+            logger.info(f"Process created: {name} (ID: {process_id})")
+            return process_id
+
+    def get_process(self, process_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get process by ID
+
+        Args:
+            process_id: Process ID
+
+        Returns:
+            Dict with process data or None
+        """
+        conn = self.connect()
+        cursor = conn.execute("""
+            SELECT * FROM processes WHERE id = ?
+        """, (process_id,))
+
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+
+    def get_all_processes(self, include_archived: bool = False,
+                          include_inactive: bool = False) -> List[Dict[str, Any]]:
+        """
+        Get all processes
+
+        Args:
+            include_archived: Include archived processes
+            include_inactive: Include inactive processes
+
+        Returns:
+            List of process dicts
+        """
+        conn = self.connect()
+
+        query = "SELECT * FROM processes WHERE 1=1"
+        params = []
+
+        if not include_archived:
+            query += " AND is_archived = 0"
+
+        if not include_inactive:
+            query += " AND is_active = 1"
+
+        query += " ORDER BY pinned_order ASC, order_index ASC, name ASC"
+
+        cursor = conn.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def update_process(self, process_id: int, **kwargs) -> bool:
+        """
+        Update process fields
+
+        Args:
+            process_id: Process ID
+            **kwargs: Fields to update
+
+        Returns:
+            bool: Success status
+        """
+        if not kwargs:
+            return True
+
+        # Add updated_at timestamp
+        kwargs['updated_at'] = datetime.now().isoformat()
+
+        # Build UPDATE query
+        fields = ', '.join(f"{k} = ?" for k in kwargs.keys())
+        values = list(kwargs.values()) + [process_id]
+
+        with self.transaction() as conn:
+            conn.execute(f"""
+                UPDATE processes SET {fields} WHERE id = ?
+            """, values)
+
+        logger.info(f"Process {process_id} updated: {list(kwargs.keys())}")
+        return True
+
+    def delete_process(self, process_id: int) -> bool:
+        """
+        Delete process and all its steps (CASCADE)
+
+        Args:
+            process_id: Process ID
+
+        Returns:
+            bool: Success status
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM processes WHERE id = ?", (process_id,))
+
+        logger.info(f"Process {process_id} deleted")
+        return True
+
+    def search_processes(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Search processes by name, description, or tags
+
+        Args:
+            query: Search query
+
+        Returns:
+            List of matching processes
+        """
+        conn = self.connect()
+        search_pattern = f"%{query}%"
+
+        cursor = conn.execute("""
+            SELECT * FROM processes
+            WHERE (name LIKE ? OR description LIKE ? OR tags LIKE ?)
+                AND is_active = 1 AND is_archived = 0
+            ORDER BY use_count DESC, name ASC
+        """, (search_pattern, search_pattern, search_pattern))
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_pinned_processes(self) -> List[Dict[str, Any]]:
+        """
+        Get all pinned processes
+
+        Returns:
+            List of pinned processes ordered by pinned_order
+        """
+        conn = self.connect()
+        cursor = conn.execute("""
+            SELECT * FROM processes
+            WHERE is_pinned = 1 AND is_active = 1 AND is_archived = 0
+            ORDER BY pinned_order ASC
+        """)
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    # ==================== PROCESS STEPS (process_items) ====================
+
+    def add_process_step(self, process_id: int, item_id: int, step_order: int,
+                         custom_label: str = None, is_optional: bool = False,
+                         is_enabled: bool = True, wait_for_confirmation: bool = False,
+                         notes: str = None, group_name: str = None) -> int:
+        """
+        Add a step to a process
+
+        Args:
+            process_id: Process ID
+            item_id: Item ID
+            step_order: Order of this step in the process
+            custom_label: Custom label for this step
+            is_optional: Whether this step is optional
+            is_enabled: Whether this step is enabled
+            wait_for_confirmation: Whether to wait for user confirmation
+            notes: Additional notes for this step
+            group_name: Group name for organizing steps
+
+        Returns:
+            int: ID of created process_item
+        """
+        with self.transaction() as conn:
+            cursor = conn.execute("""
+                INSERT INTO process_items (
+                    process_id, item_id, step_order, custom_label,
+                    is_optional, is_enabled, wait_for_confirmation,
+                    notes, group_name
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (process_id, item_id, step_order, custom_label,
+                  int(is_optional), int(is_enabled), int(wait_for_confirmation),
+                  notes, group_name))
+
+            step_id = cursor.lastrowid
+            logger.info(f"Step added to process {process_id}: item {item_id} at order {step_order}")
+            return step_id
+
+    def get_process_steps(self, process_id: int) -> List[Dict[str, Any]]:
+        """
+        Get all steps of a process with item details
+
+        Args:
+            process_id: Process ID
+
+        Returns:
+            List of steps with item information
+        """
+        conn = self.connect()
+        cursor = conn.execute("""
+            SELECT
+                pi.*,
+                i.label as item_label,
+                i.content as item_content,
+                i.type as item_type,
+                i.icon as item_icon,
+                i.is_sensitive as item_is_sensitive
+            FROM process_items pi
+            JOIN items i ON pi.item_id = i.id
+            WHERE pi.process_id = ?
+            ORDER BY pi.step_order ASC
+        """, (process_id,))
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    def update_process_step(self, step_id: int, **kwargs) -> bool:
+        """
+        Update a process step
+
+        Args:
+            step_id: Process step ID
+            **kwargs: Fields to update
+
+        Returns:
+            bool: Success status
+        """
+        if not kwargs:
+            return True
+
+        fields = ', '.join(f"{k} = ?" for k in kwargs.keys())
+        values = list(kwargs.values()) + [step_id]
+
+        with self.transaction() as conn:
+            conn.execute(f"""
+                UPDATE process_items SET {fields} WHERE id = ?
+            """, values)
+
+        logger.info(f"Process step {step_id} updated")
+        return True
+
+    def delete_process_step(self, step_id: int) -> bool:
+        """
+        Delete a process step
+
+        Args:
+            step_id: Process step ID
+
+        Returns:
+            bool: Success status
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM process_items WHERE id = ?", (step_id,))
+
+        logger.info(f"Process step {step_id} deleted")
+        return True
+
+    def reorder_process_steps(self, process_id: int, step_ids_in_order: List[int]) -> bool:
+        """
+        Reorder steps of a process
+
+        Args:
+            process_id: Process ID
+            step_ids_in_order: List of step IDs in desired order
+
+        Returns:
+            bool: Success status
+        """
+        with self.transaction() as conn:
+            for new_order, step_id in enumerate(step_ids_in_order, start=1):
+                conn.execute("""
+                    UPDATE process_items
+                    SET step_order = ?
+                    WHERE id = ? AND process_id = ?
+                """, (new_order, step_id, process_id))
+
+        logger.info(f"Reordered {len(step_ids_in_order)} steps for process {process_id}")
+        return True
+
+    # ==================== PROCESS EXECUTION HISTORY ====================
+
+    def add_execution_history(self, process_id: int, total_steps: int) -> int:
+        """
+        Start tracking a process execution
+
+        Args:
+            process_id: Process ID
+            total_steps: Total number of steps
+
+        Returns:
+            int: Execution history ID
+        """
+        with self.transaction() as conn:
+            cursor = conn.execute("""
+                INSERT INTO process_execution_history (
+                    process_id, total_steps, status
+                ) VALUES (?, ?, 'running')
+            """, (process_id, total_steps))
+
+            execution_id = cursor.lastrowid
+            logger.info(f"Started execution tracking for process {process_id} (ID: {execution_id})")
+            return execution_id
+
+    def update_execution_history(self, execution_id: int, **kwargs) -> bool:
+        """
+        Update execution history
+
+        Args:
+            execution_id: Execution history ID
+            **kwargs: Fields to update (status, completed_steps, failed_steps, error_message, etc.)
+
+        Returns:
+            bool: Success status
+        """
+        if not kwargs:
+            return True
+
+        # If status is being set to completed, set completed_at
+        if 'status' in kwargs and kwargs['status'] in ('completed', 'failed', 'cancelled'):
+            kwargs['completed_at'] = datetime.now().isoformat()
+
+        fields = ', '.join(f"{k} = ?" for k in kwargs.keys())
+        values = list(kwargs.values()) + [execution_id]
+
+        with self.transaction() as conn:
+            conn.execute(f"""
+                UPDATE process_execution_history SET {fields} WHERE id = ?
+            """, values)
+
+        return True
+
+    def get_process_execution_history(self, process_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get execution history for a process
+
+        Args:
+            process_id: Process ID
+            limit: Maximum number of records
+
+        Returns:
+            List of execution history records
+        """
+        conn = self.connect()
+        cursor = conn.execute("""
+            SELECT * FROM process_execution_history
+            WHERE process_id = ?
+            ORDER BY started_at DESC
+            LIMIT ?
+        """, (process_id, limit))
+
+        return [dict(row) for row in cursor.fetchall()]
+
     # ==================== Context Manager ====================
 
     def __enter__(self):

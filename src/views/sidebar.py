@@ -69,6 +69,12 @@ class Sidebar(QWidget):
     # Signal emitted when quick create button is clicked
     quick_create_clicked = pyqtSignal()
 
+    # Signal emitted when create process button is clicked
+    create_process_clicked = pyqtSignal()
+
+    # Signal emitted when view processes button is clicked
+    view_processes_clicked = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.category_buttons = {}
@@ -260,12 +266,12 @@ class Sidebar(QWidget):
         self.notebook_button.clicked.connect(self.on_notebook_clicked)
         main_layout.addWidget(self.notebook_button)
 
-        # Category Filter button (FC)
-        self.category_filter_button = QPushButton("📂")
-        self.category_filter_button.setFixedSize(70, 40)
-        self.category_filter_button.setToolTip("Filtro de Categorías")
-        self.category_filter_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.category_filter_button.setStyleSheet(f"""
+        # Create Process button
+        self.create_process_button = QPushButton("⚙️➕")
+        self.create_process_button.setFixedSize(70, 40)
+        self.create_process_button.setToolTip("Crear Proceso")
+        self.create_process_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.create_process_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {self.theme.get_color('background_deep')};
                 color: {self.theme.get_color('text_primary')};
@@ -277,18 +283,52 @@ class Sidebar(QWidget):
             QPushButton:hover {{
                 background: qlineargradient(
                     x1:0, y1:0, x2:1, y2:0,
-                    stop:0 {self.theme.get_color('secondary')},
-                    stop:1 {self.theme.get_color('accent')}
+                    stop:0 #ff6b00,
+                    stop:1 #00ff88
                 );
-                border-bottom: 2px solid {self.theme.get_color('primary')};
+                border-bottom: 2px solid #ff6b00;
             }}
             QPushButton:pressed {{
                 background-color: {self.theme.get_color('surface')};
                 transform: scale(0.95);
             }}
         """)
-        self.category_filter_button.clicked.connect(self.on_category_filter_clicked)
-        main_layout.addWidget(self.category_filter_button)
+        self.create_process_button.clicked.connect(self.on_create_process_clicked)
+        main_layout.addWidget(self.create_process_button)
+
+        # View Processes button
+        self.view_processes_button = QPushButton("⚙️📋")
+        self.view_processes_button.setFixedSize(70, 40)
+        self.view_processes_button.setToolTip("Ver Procesos Guardados")
+        self.view_processes_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.view_processes_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.theme.get_color('background_deep')};
+                color: {self.theme.get_color('text_primary')};
+                border: none;
+                border-bottom: 2px solid {self.theme.get_color('background_deep')};
+                font-size: 14pt;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #ff6b00,
+                    stop:1 #ff8c00
+                );
+                border-bottom: 2px solid #ff6b00;
+            }}
+            QPushButton:pressed {{
+                background-color: {self.theme.get_color('surface')};
+                transform: scale(0.95);
+            }}
+        """)
+        self.view_processes_button.clicked.connect(self.on_view_processes_clicked)
+        main_layout.addWidget(self.view_processes_button)
+
+        # MOVED TO QUICK ACCESS PANEL: Category Filter button (FC)
+        # self.category_filter_button = QPushButton("📂")
+        # ... (moved to QuickAccessPanel)
 
         # Scroll area for category buttons
         self.scroll_area = QScrollArea()
@@ -342,6 +382,37 @@ class Sidebar(QWidget):
         self.quick_create_button.clicked.connect(self.on_quick_create_clicked)
         main_layout.addWidget(self.quick_create_button)
 
+        # Quick Access button (⚡)
+        self.quick_access_button = QPushButton("⚡")
+        self.quick_access_button.setFixedSize(70, 40)
+        self.quick_access_button.setToolTip("Acceso Rápido")
+        self.quick_access_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.quick_access_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {self.theme.get_color('background_deep')};
+                color: #ffaa00;
+                border: none;
+                border-top: 2px solid {self.theme.get_color('surface')};
+                border-bottom: 2px solid {self.theme.get_color('surface')};
+                font-size: 18pt;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #00ff88,
+                    stop:1 #00ccff
+                );
+                color: #000000;
+            }}
+            QPushButton:pressed {{
+                background-color: {self.theme.get_color('surface')};
+                color: #ffaa00;
+            }}
+        """)
+        self.quick_access_button.clicked.connect(self.on_quick_access_clicked)
+        main_layout.addWidget(self.quick_access_button)
+
         # Scroll down button
         self.scroll_down_button = QPushButton("▼")
         self.scroll_down_button.setFixedSize(70, 30)
@@ -372,121 +443,21 @@ class Sidebar(QWidget):
         self.scroll_down_button.clicked.connect(self.scroll_down)
         main_layout.addWidget(self.scroll_down_button)
 
-        # Table Creator button
-        self.table_creator_button = QPushButton("📊")
-        self.table_creator_button.setFixedSize(70, 45)
-        self.table_creator_button.setToolTip("Crear Tabla de Items")
-        self.table_creator_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.table_creator_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.theme.get_color('background_deep')};
-                color: {self.theme.get_color('text_secondary')};
-                border: none;
-                border-top: 2px solid {self.theme.get_color('surface')};
-                font-size: 16pt;
-            }}
-            QPushButton:hover {{
-                background-color: {self.theme.get_color('surface')};
-                color: #00d4ff;
-            }}
-            QPushButton:pressed {{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #00d4ff,
-                    stop:1 #007acc
-                );
-                color: {self.theme.get_color('background_deep')};
-            }}
-        """)
-        self.table_creator_button.clicked.connect(self.on_table_creator_clicked)
-        main_layout.addWidget(self.table_creator_button)
+        # MOVED TO QUICK ACCESS PANEL: Table Creator button
+        # self.table_creator_button = QPushButton("📊")
+        # ... (moved to QuickAccessPanel)
 
-        # Tables Manager button
-        self.tables_manager_button = QPushButton("📋")
-        self.tables_manager_button.setFixedSize(70, 45)
-        self.tables_manager_button.setToolTip("Gestionar Tablas")
-        self.tables_manager_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.tables_manager_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.theme.get_color('background_deep')};
-                color: {self.theme.get_color('text_secondary')};
-                border: none;
-                border-top: 2px solid {self.theme.get_color('surface')};
-                font-size: 16pt;
-            }}
-            QPushButton:hover {{
-                background-color: {self.theme.get_color('surface')};
-                color: #00d4ff;
-            }}
-            QPushButton:pressed {{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #00d4ff,
-                    stop:1 #007acc
-                );
-                color: {self.theme.get_color('background_deep')};
-            }}
-        """)
-        self.tables_manager_button.clicked.connect(self.on_tables_manager_clicked)
-        main_layout.addWidget(self.tables_manager_button)
+        # MOVED TO QUICK ACCESS PANEL: Tables Manager button
+        # self.tables_manager_button = QPushButton("📋")
+        # ... (moved to QuickAccessPanel)
 
-        # Favorites button
-        self.favorites_button = QPushButton("⭐")
-        self.favorites_button.setFixedSize(70, 45)
-        self.favorites_button.setToolTip("Favoritos")
-        self.favorites_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.favorites_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.theme.get_color('background_deep')};
-                color: {self.theme.get_color('text_secondary')};
-                border: none;
-                border-top: 2px solid {self.theme.get_color('surface')};
-                font-size: 16pt;
-            }}
-            QPushButton:hover {{
-                background-color: {self.theme.get_color('surface')};
-                color: #FFD700;
-            }}
-            QPushButton:pressed {{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #FFD700,
-                    stop:1 #FFA500
-                );
-                color: {self.theme.get_color('background_deep')};
-            }}
-        """)
-        self.favorites_button.clicked.connect(self.on_favorites_clicked)
-        main_layout.addWidget(self.favorites_button)
+        # MOVED TO QUICK ACCESS PANEL: Favorites button
+        # self.favorites_button = QPushButton("⭐")
+        # ... (moved to QuickAccessPanel)
 
-        # Stats button
-        self.stats_button = QPushButton("📊")
-        self.stats_button.setFixedSize(70, 45)
-        self.stats_button.setToolTip("Estadísticas")
-        self.stats_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.stats_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.theme.get_color('background_deep')};
-                color: {self.theme.get_color('text_secondary')};
-                border: none;
-                border-top: 2px solid {self.theme.get_color('surface')};
-                font-size: 16pt;
-            }}
-            QPushButton:hover {{
-                background-color: {self.theme.get_color('surface')};
-                color: {self.theme.get_color('success')};
-            }}
-            QPushButton:pressed {{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:0,
-                    stop:0 {self.theme.get_color('success')},
-                    stop:1 {self.theme.get_color('primary')}
-                );
-                color: {self.theme.get_color('background_deep')};
-            }}
-        """)
-        self.stats_button.clicked.connect(self.on_stats_clicked)
-        main_layout.addWidget(self.stats_button)
+        # MOVED TO QUICK ACCESS PANEL: Stats button
+        # self.stats_button = QPushButton("📊")
+        # ... (moved to QuickAccessPanel)
 
         # AI Bulk Creation button
         self.ai_bulk_button = QPushButton("🤖")
@@ -554,37 +525,11 @@ class Sidebar(QWidget):
         self.ai_table_button.clicked.connect(self.on_ai_table_clicked)
         main_layout.addWidget(self.ai_table_button)
 
-        # Browser button
-        self.browser_button = QPushButton("🌐")
-        self.browser_button.setFixedSize(70, 45)
-        self.browser_button.setToolTip("Navegador Web")
-        self.browser_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.browser_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.theme.get_color('background_deep')};
-                color: {self.theme.get_color('text_secondary')};
-                border: none;
-                border-top: 2px solid {self.theme.get_color('surface')};
-                font-size: 14pt;
-            }}
-            QPushButton:hover {{
-                background: qlineargradient(
-                    x1:0, y1:0, x2:0, y2:1,
-                    stop:0 {self.theme.get_color('primary')},
-                    stop:1 {self.theme.get_color('surface')}
-                );
-                color: {self.theme.get_color('accent')};
-                border-top: 2px solid {self.theme.get_color('accent')};
-            }}
-            QPushButton:pressed {{
-                background-color: {self.theme.get_color('primary')};
-                color: {self.theme.get_color('text_primary')};
-            }}
-        """)
-        self.browser_button.clicked.connect(self.on_browser_clicked)
-        main_layout.addWidget(self.browser_button)
+        # MOVED TO QUICK ACCESS PANEL: Browser button
+        # self.browser_button = QPushButton("🌐")
+        # ... (moved to QuickAccessPanel)
 
-        # Dashboard button
+        # MOVED TO QUICK ACCESS PANEL: Dashboard button (moved as well)
         self.dashboard_button = QPushButton("🗂️")
         self.dashboard_button.setFixedSize(70, 45)
         self.dashboard_button.setToolTip("Dashboard de Estructura")
@@ -827,6 +772,14 @@ class Sidebar(QWidget):
         """Handle notebook button click"""
         self.toggle_notebook()
 
+    def on_create_process_clicked(self):
+        """Handle create process button click"""
+        self.create_process_clicked.emit()
+
+    def on_view_processes_clicked(self):
+        """Handle view processes button click"""
+        self.view_processes_clicked.emit()
+
     def on_dashboard_clicked(self):
         """Handle dashboard button click"""
         self.dashboard_clicked.emit()
@@ -838,6 +791,29 @@ class Sidebar(QWidget):
     def on_quick_create_clicked(self):
         """Handle quick create button click"""
         self.quick_create_clicked.emit()
+
+    def on_quick_access_clicked(self):
+        """Handle quick access button click - show/hide quick access panel"""
+        if not hasattr(self, 'quick_access_panel') or self.quick_access_panel is None:
+            from views.quick_access_panel import QuickAccessPanel
+            self.quick_access_panel = QuickAccessPanel(self)
+
+            # Connect signals if controller is available
+            if self.controller:
+                self.quick_access_panel.stats_clicked.connect(lambda: self.stats_clicked.emit())
+                self.quick_access_panel.tables_manager_clicked.connect(lambda: self.tables_manager_clicked.emit())
+                self.quick_access_panel.favorites_clicked.connect(lambda: self.favorites_clicked.emit())
+                self.quick_access_panel.dashboard_clicked.connect(lambda: self.dashboard_clicked.emit())
+                self.quick_access_panel.browser_clicked.connect(lambda: self.browser_clicked.emit())
+                self.quick_access_panel.category_filter_clicked.connect(lambda: self.category_filter_clicked.emit())
+                self.quick_access_panel.table_creator_clicked.connect(lambda: self.table_creator_clicked.emit())
+
+        # Toggle visibility
+        if self.quick_access_panel.isVisible():
+            self.quick_access_panel.hide()
+        else:
+            self.quick_access_panel.position_near_button(self.quick_access_button)
+            self.quick_access_panel.show()
 
     def on_pinned_panels_manager_clicked(self):
         """Handle pinned panels manager button click"""

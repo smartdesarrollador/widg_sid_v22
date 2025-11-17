@@ -161,3 +161,12 @@ class SearchBar(QWidget):
     def set_focus(self):
         """Set focus to search input"""
         self.search_input.setFocus()
+
+    def setPlaceholderText(self, text: str):
+        """
+        Set placeholder text for search input
+
+        Args:
+            text: Placeholder text to display
+        """
+        self.search_input.setPlaceholderText(text)

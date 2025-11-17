@@ -207,6 +207,8 @@ class MainWindow(QMainWindow):
         self.sidebar.refresh_clicked.connect(self.on_refresh_clicked)
         self.sidebar.quick_create_clicked.connect(self.on_quick_create_clicked)
         self.sidebar.pinned_panels_manager_clicked.connect(self.show_pinned_panels_manager)
+        self.sidebar.create_process_clicked.connect(self.on_create_process_clicked)
+        self.sidebar.view_processes_clicked.connect(self.on_view_processes_clicked)
         main_layout.addWidget(self.sidebar)
 
     def load_categories(self, categories):
@@ -1101,6 +1103,197 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             logger.error(f"Error reloading categories after quick create: {e}", exc_info=True)
+
+    def on_create_process_clicked(self):
+        """Handle create process button click - open ProcessBuilderWindow"""
+        try:
+            logger.info("Create process button clicked")
+
+            if not self.controller:
+                logger.error("No controller available")
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "No se pudo acceder al controlador."
+                )
+                return
+
+            # Check if ProcessController is initialized
+            if not hasattr(self.controller, 'process_controller') or not self.controller.process_controller:
+                logger.error("ProcessController not initialized")
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "ProcessController no esta inicializado."
+                )
+                return
+
+            # Import ProcessBuilderWindow
+            from views.process_builder_window import ProcessBuilderWindow
+
+            # Create and show process builder window
+            builder_window = ProcessBuilderWindow(
+                config_manager=self.controller.config_manager,
+                process_controller=self.controller.process_controller,
+                process_id=None,  # None = create new process
+                parent=self
+            )
+
+            # Connect process_saved signal
+            builder_window.process_saved.connect(self.on_process_saved)
+
+            # Show window
+            builder_window.show()
+
+            logger.info("ProcessBuilderWindow opened")
+
+        except Exception as e:
+            logger.error(f"Error opening ProcessBuilderWindow: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error al abrir ventana de procesos:\n{str(e)}"
+            )
+
+    def on_process_saved(self, process_id: int):
+        """Handle process saved event"""
+        try:
+            logger.info(f"Process saved: {process_id}")
+            # Process saved successfully, could show notification or refresh something
+
+        except Exception as e:
+            logger.error(f"Error handling process saved: {e}", exc_info=True)
+
+    def on_view_processes_clicked(self):
+        """Handle view processes button click - open ProcessesFloatingPanel"""
+        try:
+            logger.info("View processes button clicked")
+
+            if not self.controller:
+                logger.error("No controller available")
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "No se pudo acceder al controlador."
+                )
+                return
+
+            # Check if ProcessController is initialized
+            if not hasattr(self.controller, 'process_controller') or not self.controller.process_controller:
+                logger.error("ProcessController not initialized")
+                QMessageBox.warning(
+                    self,
+                    "Error",
+                    "ProcessController no esta inicializado."
+                )
+                return
+
+            # Import ProcessesFloatingPanel
+            from views.processes_floating_panel import ProcessesFloatingPanel
+
+            # Check if panel already exists and is not pinned
+            if hasattr(self, 'processes_panel') and self.processes_panel and not self.processes_panel.is_pinned:
+                # Reuse existing panel
+                self.processes_panel.show()
+                self.processes_panel.raise_()
+                self.processes_panel.activateWindow()
+                logger.info("Reusing existing processes panel")
+                return
+
+            # Create new panel
+            self.processes_panel = ProcessesFloatingPanel(
+                db_manager=self.controller.config_manager.db,
+                config_manager=self.controller.config_manager,
+                process_controller=self.controller.process_controller,
+                parent=self,
+                main_window=self
+            )
+
+            # Position near sidebar
+            self.processes_panel.position_near_sidebar(self)
+
+            # Load all processes
+            self.processes_panel.load_all_processes()
+
+            # Connect signals
+            self.processes_panel.process_executed.connect(self.on_process_executed_from_panel)
+            self.processes_panel.process_edited.connect(self.on_process_edit_requested)
+            self.processes_panel.pin_state_changed.connect(self.on_processes_panel_pin_changed)
+            self.processes_panel.window_closed.connect(self.on_processes_panel_closed)
+
+            # Show panel
+            self.processes_panel.show()
+
+            logger.info("ProcessesFloatingPanel opened")
+
+        except Exception as e:
+            logger.error(f"Error opening ProcessesFloatingPanel: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error al abrir panel de procesos:\n{str(e)}"
+            )
+
+    def on_process_executed_from_panel(self, process_id: int):
+        """Handle process execution from panel"""
+        try:
+            logger.info(f"Process {process_id} executed from panel")
+            # Could show notification or update stats
+        except Exception as e:
+            logger.error(f"Error handling process execution: {e}", exc_info=True)
+
+    def on_process_edit_requested(self, process_id: int):
+        """Handle process edit request from panel"""
+        try:
+            logger.info(f"Edit requested for process {process_id}")
+
+            # Import ProcessBuilderWindow
+            from views.process_builder_window import ProcessBuilderWindow
+
+            # Create builder window in edit mode
+            builder_window = ProcessBuilderWindow(
+                config_manager=self.controller.config_manager,
+                process_controller=self.controller.process_controller,
+                process_id=process_id,  # Edit mode
+                parent=self
+            )
+
+            # Connect process_saved signal
+            builder_window.process_saved.connect(self.on_process_updated)
+
+            # Show window
+            builder_window.show()
+
+        except Exception as e:
+            logger.error(f"Error opening process editor: {e}", exc_info=True)
+
+    def on_process_updated(self, process_id: int):
+        """Handle process updated event"""
+        try:
+            logger.info(f"Process {process_id} updated")
+
+            # Reload processes panel if exists
+            if hasattr(self, 'processes_panel') and self.processes_panel:
+                self.processes_panel.reload_processes()
+
+        except Exception as e:
+            logger.error(f"Error handling process update: {e}", exc_info=True)
+
+    def on_processes_panel_pin_changed(self, is_pinned: bool):
+        """Handle processes panel pin state change"""
+        try:
+            logger.info(f"Processes panel pin state changed to: {is_pinned}")
+            # Could track pinned panels
+        except Exception as e:
+            logger.error(f"Error handling pin state change: {e}", exc_info=True)
+
+    def on_processes_panel_closed(self):
+        """Handle processes panel closed"""
+        try:
+            logger.info("Processes panel closed")
+            # Cleanup if needed
+        except Exception as e:
+            logger.error(f"Error handling panel close: {e}", exc_info=True)
 
     def on_item_clicked(self, item: Item):
         """Handle item button click"""

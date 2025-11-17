@@ -15,6 +15,7 @@ from core.notebook_manager import NotebookManager
 from core.workarea_manager import WorkareaManager
 from controllers.clipboard_controller import ClipboardController
 from controllers.list_controller import ListController
+from controllers.process_controller import ProcessController
 from models.category import Category
 from models.item import Item
 import logging
@@ -38,6 +39,11 @@ class MainController:
         # Initialize controllers
         self.clipboard_controller = ClipboardController(self.clipboard_manager)
         self.list_controller = ListController(self.config_manager.db, self.clipboard_manager)
+        self.process_controller = ProcessController(
+            self.config_manager.db,
+            self.config_manager,
+            self.clipboard_manager
+        )
 
         # Data
         self.categories: List[Category] = []  # All categories (unfiltered, for compatibility)
