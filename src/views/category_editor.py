@@ -48,6 +48,13 @@ class CategoryEditor(QWidget):
 
     def init_ui(self):
         """Initialize the UI"""
+        # Set background color
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+            }
+        """)
+
         # Main layout
         main_layout = QHBoxLayout(self)
         main_layout.setSpacing(15)

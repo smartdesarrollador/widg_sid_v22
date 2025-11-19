@@ -132,6 +132,26 @@ class CreateListFromSearchDialog(QDialog):
                 background-color: #3d3d3d;
                 border: 1px solid #00aaff;
             }
+            QListWidget {
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+                border: 1px solid #3d3d3d;
+                border-radius: 3px;
+            }
+            QListWidget::item {
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+                padding: 5px;
+            }
+            QListWidget::item:hover {
+                background-color: #3d3d3d;
+            }
+            QListWidget::item:selected {
+                background-color: #007acc;
+            }
+            QCheckBox {
+                color: #e0e0e0;
+            }
         """)
 
     def load_categories(self):

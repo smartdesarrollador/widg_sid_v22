@@ -57,6 +57,11 @@ class HistoryPanel(QWidget):
 
         # Container for history items
         self.history_container = QWidget()
+        self.history_container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         self.history_layout = QVBoxLayout(self.history_container)
         self.history_layout.setContentsMargins(0, 0, 0, 0)
         self.history_layout.setSpacing(5)
@@ -174,6 +179,11 @@ class FiltersPanel(QWidget):
         """)
 
         container = QWidget()
+        container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(12)
@@ -651,6 +661,11 @@ class TagsFilterPanel(QWidget):
 
         # Container for tag checkboxes
         self.tags_container = QWidget()
+        self.tags_container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         self.tags_layout = QVBoxLayout(self.tags_container)
         self.tags_layout.setContentsMargins(0, 0, 0, 0)
         self.tags_layout.setSpacing(6)

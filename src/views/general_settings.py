@@ -46,6 +46,13 @@ class GeneralSettings(QWidget):
 
     def init_ui(self):
         """Initialize the UI"""
+        # Set background color - use specific selector to not affect QGroupBox
+        self.setStyleSheet("""
+            GeneralSettings {
+                background-color: #2b2b2b;
+            }
+        """)
+
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(20)

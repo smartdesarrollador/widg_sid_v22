@@ -32,6 +32,13 @@ class FilesSettings(QWidget):
 
     def init_ui(self):
         """Inicializar interfaz de usuario"""
+        # Set background color
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+            }
+        """)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)

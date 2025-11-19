@@ -68,6 +68,11 @@ class AITableConfigStep(QWidget):
 
         # Widget contenedor
         container = QWidget()
+        container.setStyleSheet("""
+            QWidget {
+                background-color: #252525;
+            }
+        """)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(30, 20, 30, 20)
         layout.setSpacing(20)

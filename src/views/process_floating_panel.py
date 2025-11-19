@@ -138,6 +138,11 @@ class ProcessFloatingPanel(QWidget):
 
         # Content area (scrollable)
         self.content_widget = QWidget()
+        self.content_widget.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         self.content_layout = QVBoxLayout(self.content_widget)
         self.content_layout.setContentsMargins(10, 10, 10, 10)
         self.content_layout.setSpacing(10)

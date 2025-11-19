@@ -17,7 +17,7 @@ class HighlightDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.search_query = ""
-        self.highlight_color = "#ffeb3b"  # Yellow highlight
+        self.highlight_color = "#8b6914"  # Dark gold/brown highlight for dark theme
 
     def set_search_query(self, query: str):
         """Set the search query to highlight"""
@@ -121,7 +121,7 @@ class HighlightDelegate(QStyledItemDelegate):
 
             # Add highlighted match
             match_text = text_escaped[pos:pos + len(query)]
-            result.append(f'<span style="background-color: {self.highlight_color}; color: #000000; font-weight: bold;">{match_text}</span>')
+            result.append(f'<span style="background-color: {self.highlight_color}; color: #ffffff; font-weight: bold;">{match_text}</span>')
 
             last_pos = pos + len(query)
             pos = text_lower.find(query_lower, last_pos)

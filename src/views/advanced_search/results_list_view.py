@@ -86,6 +86,11 @@ class ResultsListView(QWidget):
 
         # Container widget for scroll area
         self.scroll_widget = QWidget()
+        self.scroll_widget.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
         self.scroll_layout.setContentsMargins(10, 10, 10, 10)
         self.scroll_layout.setSpacing(8)

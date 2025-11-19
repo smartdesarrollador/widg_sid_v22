@@ -95,6 +95,11 @@ class ListCreatorDialog(QDialog):
 
         # Container widget for scroll area
         scroll_container = QWidget()
+        scroll_container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         form_layout = QVBoxLayout(scroll_container)
         form_layout.setSpacing(15)
         form_layout.setContentsMargins(20, 20, 20, 20)
@@ -218,6 +223,11 @@ class ListCreatorDialog(QDialog):
 
         # === CONTENEDOR PARA PASOS (sin scroll separado) ===
         self.steps_container = QWidget()
+        self.steps_container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         self.steps_layout = QVBoxLayout(self.steps_container)
         self.steps_layout.setSpacing(10)
         self.steps_layout.setContentsMargins(0, 0, 0, 0)
@@ -239,6 +249,11 @@ class ListCreatorDialog(QDialog):
 
         # === BOTONES DE ACCIÓN (FUERA DEL SCROLL, FIJOS EN LA PARTE INFERIOR) ===
         buttons_container = QWidget()
+        buttons_container.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+            }
+        """)
         buttons_container_layout = QVBoxLayout(buttons_container)
         buttons_container_layout.setContentsMargins(20, 10, 20, 20)
         buttons_container_layout.setSpacing(0)

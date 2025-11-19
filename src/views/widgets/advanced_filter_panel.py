@@ -687,6 +687,11 @@ class AdvancedFilterPanel(QWidget):
 
         # Widget contenedor para los checkboxes de tags
         self.tags_container = QWidget()
+        self.tags_container.setStyleSheet("""
+            QWidget {
+                background-color: #252525;
+            }
+        """)
         self.tags_container_layout = QVBoxLayout(self.tags_container)
         self.tags_container_layout.setContentsMargins(8, 8, 8, 8)
         self.tags_container_layout.setSpacing(6)

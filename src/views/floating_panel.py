@@ -430,6 +430,12 @@ class FloatingPanel(QWidget):
             QSizePolicy.Policy.MinimumExpanding,  # Horizontal: puede expandirse más allá del tamaño mínimo
             QSizePolicy.Policy.Preferred  # Vertical: tamaño preferido
         )
+        # Asegurar fondo oscuro consistente (importante para Windows modo claro)
+        self.items_container.setStyleSheet(f"""
+            QWidget {{
+                background-color: {self.theme.get_color('background_deep')};
+            }}
+        """)
         self.items_layout = QVBoxLayout(self.items_container)
         self.items_layout.setContentsMargins(0, 0, 0, 0)
         self.items_layout.setSpacing(0)

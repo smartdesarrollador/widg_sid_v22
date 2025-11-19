@@ -150,6 +150,7 @@ class ItemDetailsDialog(QDialog):
                 background-color: transparent;
             }
             QGroupBox {
+                background-color: #2d2d2d;
                 border: 1px solid #3d3d3d;
                 border-radius: 5px;
                 margin-top: 10px;
@@ -161,6 +162,7 @@ class ItemDetailsDialog(QDialog):
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px;
+                background-color: #2d2d2d;
             }
             QPushButton {
                 background-color: #007acc;

@@ -229,6 +229,11 @@ class ItemEditorDialog(QDialog):
 
         # Create container widget for scroll area
         scroll_container = QWidget()
+        scroll_container.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+            }
+        """)
         scroll_container_layout = QVBoxLayout(scroll_container)
         scroll_container_layout.setSpacing(15)
         scroll_container_layout.setContentsMargins(20, 20, 20, 20)
@@ -458,6 +463,11 @@ class ItemEditorDialog(QDialog):
 
         # Buttons container (outside scroll area, fixed at bottom)
         buttons_container = QWidget()
+        buttons_container.setStyleSheet("""
+            QWidget {
+                background-color: #2b2b2b;
+            }
+        """)
         buttons_container_layout = QVBoxLayout(buttons_container)
         buttons_container_layout.setContentsMargins(20, 10, 20, 20)
 

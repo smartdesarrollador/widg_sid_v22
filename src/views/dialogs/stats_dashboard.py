@@ -146,9 +146,14 @@ class StatsDashboard(QDialog):
                 color: #cccccc;
                 gridline-color: #3e3e42;
                 border: 1px solid #3e3e42;
+                alternate-background-color: #2d2d2d;
             }
             QTableWidget::item {
                 padding: 5px;
+                background-color: #252526;
+            }
+            QTableWidget::item:alternate {
+                background-color: #2d2d2d;
             }
             QTableWidget::item:selected {
                 background-color: #3e3e42;
