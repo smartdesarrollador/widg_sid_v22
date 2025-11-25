@@ -229,7 +229,7 @@ class FloatingPanel(QWidget):
         self.open_filters_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.open_filters_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {self.theme.get_color('primary')};
+                background-color: {self.theme.get_color('background_deep')};
                 color: {self.theme.get_color('text_primary')};
                 border: none;
                 border-radius: 4px;
@@ -271,7 +271,7 @@ class FloatingPanel(QWidget):
         self.copy_all_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.copy_all_button.setStyleSheet(f"""
             QPushButton {{
-                background-color: {self.theme.get_color('primary')};
+                background-color: {self.theme.get_color('background_deep')};
                 color: {self.theme.get_color('text_primary')};
                 border: none;
                 border-radius: 4px;
