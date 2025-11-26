@@ -1117,18 +1117,6 @@ class GlobalSearchPanel(QWidget):
             if widget and hasattr(widget, 'on_global_search_panel_pinned'):
                 widget.on_global_search_panel_pinned(self)
 
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
-                "Panel Anclado",
-                f"Panel '{self.panel_name}' anclado exitosamente.\n\n"
-                f"ID: {panel_id}\n"
-                f"Configuración guardada:\n"
-                f"- Búsqueda: '{self.pending_search_query or '(vacío)'}'\n"
-                f"- Filtro de estado: {self.current_state_filter}\n"
-                f"- Filtros avanzados: {'Sí' if self.current_filters else 'No'}"
-            )
-
         except Exception as e:
             logger.error(f"Error al anclar panel: {e}", exc_info=True)
             from PyQt6.QtWidgets import QMessageBox
@@ -1174,14 +1162,6 @@ class GlobalSearchPanel(QWidget):
 
             if widget and hasattr(widget, 'on_global_search_panel_unpinned'):
                 widget.on_global_search_panel_unpinned(self)
-
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
-                "Panel Desanclado",
-                f"Panel '{self.panel_name}' desanclado.\n\n"
-                f"La configuración ha sido archivada."
-            )
 
         except Exception as e:
             logger.error(f"Error al desanclar panel: {e}", exc_info=True)
