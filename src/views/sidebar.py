@@ -54,6 +54,9 @@ class Sidebar(QWidget):
     # Signal emitted when advanced search button is clicked
     advanced_search_clicked = pyqtSignal()
 
+    # Signal emitted when image gallery button is clicked
+    image_gallery_clicked = pyqtSignal()
+
     # Signal emitted when pinned panels manager button is clicked
     pinned_panels_manager_clicked = pyqtSignal()
 
@@ -817,6 +820,7 @@ class Sidebar(QWidget):
                 self.quick_access_panel.pinned_panels_clicked.connect(lambda: self.pinned_panels_manager_clicked.emit())
                 self.quick_access_panel.component_manager_clicked.connect(lambda: self.component_manager_clicked.emit())
                 self.quick_access_panel.web_static_create_clicked.connect(lambda: self.web_static_create_clicked.emit())
+                self.quick_access_panel.image_gallery_clicked.connect(lambda: self.image_gallery_clicked.emit())
 
         # Toggle visibility
         if self.quick_access_panel.isVisible():

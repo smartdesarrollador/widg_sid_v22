@@ -208,6 +208,7 @@ class MainWindow(QMainWindow):
         self.sidebar.global_search_clicked.connect(self.on_global_search_clicked)
         self.sidebar.screenshot_clicked.connect(self.on_screenshot_clicked)
         self.sidebar.advanced_search_clicked.connect(self.on_advanced_search_clicked)
+        self.sidebar.image_gallery_clicked.connect(self.on_image_gallery_clicked)
         self.sidebar.table_creator_clicked.connect(self.on_table_creator_clicked)
         self.sidebar.tables_manager_clicked.connect(self.on_tables_manager_clicked)
         self.sidebar.favorites_clicked.connect(self.on_favorites_clicked)
@@ -575,6 +576,62 @@ class MainWindow(QMainWindow):
         if self.advanced_search_window:
             self.advanced_search_window.deleteLater()
             self.advanced_search_window = None
+
+    def on_image_gallery_clicked(self):
+        """Handle image gallery button click - toggle image gallery window"""
+        try:
+            logger.info("Image gallery button clicked")
+
+            if not self.controller:
+                logger.error("No controller available")
+                return
+
+            # TOGGLE BEHAVIOR: If window exists and is visible, close it
+            if hasattr(self, 'image_gallery_window') and self.image_gallery_window and self.image_gallery_window.isVisible():
+                logger.debug("Image gallery window is visible - closing it (toggle)")
+                self.image_gallery_window.close()
+                return
+
+            # Create image gallery window if it doesn't exist
+            if not hasattr(self, 'image_gallery_window') or not self.image_gallery_window:
+                from controllers.image_gallery_controller import ImageGalleryController
+                from views.image_gallery import ImageGalleryWindow
+
+                # Get db_manager from controller's config_manager
+                db_manager = self.config_manager.db if self.config_manager else None
+
+                # Create gallery controller
+                gallery_controller = ImageGalleryController(
+                    db_manager=db_manager,
+                    main_controller=self.controller
+                )
+
+                # Create gallery window
+                self.image_gallery_window = ImageGalleryWindow(
+                    controller=gallery_controller,
+                    parent=self
+                )
+                self.image_gallery_window.closed.connect(self.on_image_gallery_window_closed)
+
+            # Show the window
+            self.image_gallery_window.show()
+            self.image_gallery_window.activateWindow()
+            logger.info("Image gallery window opened")
+
+        except Exception as e:
+            logger.error(f"Error opening image gallery: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Error al abrir galería de imágenes:\n{str(e)}\n\nRevisa widget_sidebar_error.log"
+            )
+
+    def on_image_gallery_window_closed(self):
+        """Handle image gallery window closed"""
+        logger.info("Image gallery window closed")
+        if hasattr(self, 'image_gallery_window') and self.image_gallery_window:
+            self.image_gallery_window.deleteLater()
+            self.image_gallery_window = None
 
     def on_item_edit_requested_from_search(self, item):
         """Handle item edit request from Advanced Search Window"""

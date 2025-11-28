@@ -1612,6 +1612,295 @@ class DBManager:
         logger.debug(f"Nombre de lista '{list_name}' en categoría {category_id}: {'único' if is_unique else 'ya existe'}")
         return is_unique
 
+    # ========== IMAGE GALLERY ==========
+
+    def get_image_items(
+        self,
+        category_id: Optional[int] = None,
+        search_text: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        is_favorite: Optional[bool] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        min_size: Optional[int] = None,
+        max_size: Optional[int] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict]:
+        """
+        Obtener items de tipo PATH que son imágenes con filtros opcionales
+
+        Args:
+            category_id: Filtrar por categoría específica (opcional)
+            search_text: Búsqueda en nombre/descripción (opcional)
+            tags: Lista de tags para filtrar (opcional)
+            is_favorite: Filtrar solo favoritos (opcional)
+            date_from: Fecha desde (formato: YYYY-MM-DD, opcional)
+            date_to: Fecha hasta (formato: YYYY-MM-DD, opcional)
+            min_size: Tamaño mínimo en bytes (opcional)
+            max_size: Tamaño máximo en bytes (opcional)
+            limit: Máximo de resultados (default: 50)
+            offset: Offset para paginación (default: 0)
+
+        Returns:
+            List[Dict]: Lista de items de imagen con metadatos completos
+        """
+        # Extensiones de imagen soportadas
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.ico', '.svg']
+
+        # Construcción dinámica de query con filtros
+        conditions = ["i.type = 'PATH'"]
+        params = []
+
+        # Filtro por extensiones de imagen
+        ext_placeholders = ','.join(['?' for _ in image_extensions])
+        conditions.append(f"i.file_extension IN ({ext_placeholders})")
+        params.extend(image_extensions)
+
+        # Filtro por categoría
+        if category_id is not None:
+            conditions.append("i.category_id = ?")
+            params.append(category_id)
+
+        # Filtro por búsqueda de texto
+        if search_text:
+            conditions.append("(i.label LIKE ? OR i.description LIKE ?)")
+            search_pattern = f"%{search_text}%"
+            params.extend([search_pattern, search_pattern])
+
+        # Filtro por favoritos
+        if is_favorite is not None:
+            conditions.append("i.is_favorite = ?")
+            params.append(1 if is_favorite else 0)
+
+        # Filtro por rango de fechas
+        if date_from:
+            conditions.append("DATE(i.created_at) >= ?")
+            params.append(date_from)
+
+        if date_to:
+            conditions.append("DATE(i.created_at) <= ?")
+            params.append(date_to)
+
+        # Filtro por tamaño de archivo
+        if min_size is not None:
+            conditions.append("i.file_size >= ?")
+            params.append(min_size)
+
+        if max_size is not None:
+            conditions.append("i.file_size <= ?")
+            params.append(max_size)
+
+        # Construir query principal
+        where_clause = " AND ".join(conditions)
+        query = f"""
+            SELECT
+                i.*,
+                c.name as category_name,
+                c.icon as category_icon,
+                c.color as category_color
+            FROM items i
+            LEFT JOIN categories c ON i.category_id = c.id
+            WHERE {where_clause}
+            ORDER BY i.created_at DESC
+            LIMIT ? OFFSET ?
+        """
+        params.extend([limit, offset])
+
+        results = self.execute_query(query, tuple(params))
+
+        # Parsear tags y filtrar por tags si se especificaron
+        filtered_results = []
+        for item in results:
+            # Parsear tags
+            if item['tags']:
+                try:
+                    item['tags'] = json.loads(item['tags'])
+                except json.JSONDecodeError:
+                    if isinstance(item['tags'], str):
+                        item['tags'] = [tag.strip() for tag in item['tags'].split(',') if tag.strip()]
+                    else:
+                        item['tags'] = []
+            else:
+                item['tags'] = []
+
+            # Filtrar por tags si se especificaron
+            if tags:
+                # Verificar que al menos uno de los tags especificados esté presente
+                if any(tag.lower() in [t.lower() for t in item['tags']] for tag in tags):
+                    filtered_results.append(item)
+            else:
+                filtered_results.append(item)
+
+        logger.debug(f"Retrieved {len(filtered_results)} image items")
+        return filtered_results
+
+    def get_image_count(
+        self,
+        category_id: Optional[int] = None,
+        search_text: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        is_favorite: Optional[bool] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        min_size: Optional[int] = None,
+        max_size: Optional[int] = None
+    ) -> int:
+        """
+        Contar items de imagen que coinciden con los filtros
+
+        Args:
+            Mismos parámetros que get_image_items (excepto limit/offset)
+
+        Returns:
+            int: Número total de imágenes que coinciden con filtros
+        """
+        # Extensiones de imagen soportadas
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.ico', '.svg']
+
+        # Construcción dinámica de query con filtros
+        conditions = ["type = 'PATH'"]
+        params = []
+
+        # Filtro por extensiones de imagen
+        ext_placeholders = ','.join(['?' for _ in image_extensions])
+        conditions.append(f"file_extension IN ({ext_placeholders})")
+        params.extend(image_extensions)
+
+        # Filtro por categoría
+        if category_id is not None:
+            conditions.append("category_id = ?")
+            params.append(category_id)
+
+        # Filtro por búsqueda de texto
+        if search_text:
+            conditions.append("(label LIKE ? OR description LIKE ?)")
+            search_pattern = f"%{search_text}%"
+            params.extend([search_pattern, search_pattern])
+
+        # Filtro por favoritos
+        if is_favorite is not None:
+            conditions.append("is_favorite = ?")
+            params.append(1 if is_favorite else 0)
+
+        # Filtro por rango de fechas
+        if date_from:
+            conditions.append("DATE(created_at) >= ?")
+            params.append(date_from)
+
+        if date_to:
+            conditions.append("DATE(created_at) <= ?")
+            params.append(date_to)
+
+        # Filtro por tamaño de archivo
+        if min_size is not None:
+            conditions.append("file_size >= ?")
+            params.append(min_size)
+
+        if max_size is not None:
+            conditions.append("file_size <= ?")
+            params.append(max_size)
+
+        # Construir query
+        where_clause = " AND ".join(conditions)
+        query = f"SELECT COUNT(*) as count FROM items WHERE {where_clause}"
+
+        result = self.execute_query(query, tuple(params))
+        count = result[0]['count'] if result else 0
+
+        # Si hay filtro de tags, necesitamos obtener items y filtrar manualmente
+        if tags:
+            # Obtener todos los items (sin limit) y filtrar por tags
+            items_query = f"SELECT id, tags FROM items WHERE {where_clause}"
+            items_result = self.execute_query(items_query, tuple(params))
+
+            filtered_count = 0
+            for item in items_result:
+                # Parsear tags
+                item_tags = []
+                if item['tags']:
+                    try:
+                        item_tags = json.loads(item['tags'])
+                    except json.JSONDecodeError:
+                        if isinstance(item['tags'], str):
+                            item_tags = [tag.strip() for tag in item['tags'].split(',') if tag.strip()]
+
+                # Verificar si tiene alguno de los tags especificados
+                if any(tag.lower() in [t.lower() for t in item_tags] for tag in tags):
+                    filtered_count += 1
+
+            count = filtered_count
+
+        logger.debug(f"Image count: {count}")
+        return count
+
+    def get_image_categories(self) -> List[Dict]:
+        """
+        Obtener categorías que contienen imágenes
+
+        Returns:
+            List[Dict]: Lista de categorías con conteo de imágenes
+        """
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.ico', '.svg']
+        ext_placeholders = ','.join(['?' for _ in image_extensions])
+
+        query = f"""
+            SELECT
+                c.id,
+                c.name,
+                c.icon,
+                c.color,
+                COUNT(i.id) as image_count
+            FROM categories c
+            LEFT JOIN items i ON c.id = i.category_id
+                AND i.type = 'PATH'
+                AND i.file_extension IN ({ext_placeholders})
+            GROUP BY c.id, c.name, c.icon, c.color
+            HAVING image_count > 0
+            ORDER BY c.name
+        """
+
+        results = self.execute_query(query, tuple(image_extensions))
+        logger.debug(f"Found {len(results)} categories with images")
+        return results
+
+    def get_image_tags(self) -> List[str]:
+        """
+        Obtener todos los tags únicos de items de imagen
+
+        Returns:
+            List[str]: Lista de tags únicos ordenados alfabéticamente
+        """
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.ico', '.svg']
+        ext_placeholders = ','.join(['?' for _ in image_extensions])
+
+        query = f"""
+            SELECT DISTINCT tags
+            FROM items
+            WHERE type = 'PATH'
+            AND file_extension IN ({ext_placeholders})
+            AND tags IS NOT NULL
+            AND tags != ''
+        """
+
+        results = self.execute_query(query, tuple(image_extensions))
+
+        # Extraer y consolidar todos los tags
+        all_tags = set()
+        for item in results:
+            if item['tags']:
+                try:
+                    tags = json.loads(item['tags'])
+                    all_tags.update(tags)
+                except json.JSONDecodeError:
+                    if isinstance(item['tags'], str):
+                        tags = [tag.strip() for tag in item['tags'].split(',') if tag.strip()]
+                        all_tags.update(tags)
+
+        sorted_tags = sorted(list(all_tags))
+        logger.debug(f"Found {len(sorted_tags)} unique image tags")
+        return sorted_tags
+
     # ========== CLIPBOARD HISTORY ==========
 
     def add_to_history(self, item_id: Optional[int], content: str) -> int:

@@ -55,7 +55,8 @@
       "Bash(ping:*)",
       "Bash(utilschema_output.txt)",
       "Bash(tasklist /FI \"IMAGENAME eq python.exe\")",
-      "Bash(start python:*)"
+      "Bash(start python:*)",
+      "Bash(if not exist \"src\\views\\image_gallery\" mkdir \"src\\views\\image_gallery\")"
     ],
     "deny": [],
     "ask": []
